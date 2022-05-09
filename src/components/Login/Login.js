@@ -1,0 +1,169 @@
+import React, {
+  useState,
+  useEffect,
+  useReducer,
+  useContext,
+  useRef,
+} from "react";
+
+import Card from "../UI/Card/Card";
+import styles from "./Login.module.css";
+import Button from "../UI/Button/Button";
+import AuthContext from "../../store/auth-context";
+import Input from "../UI/Input/Input";
+
+/* <-----Email----->*/
+const emailReducer = (prevState, action) => {
+  if (action.type === "USER_INPUT") {
+    return {
+      value: action.value,
+      isValid: action.value.includes("@"),
+    };
+  }
+
+  if (action.type === "INPUT_BLUR") {
+    return {
+      value: prevState.value,
+      isValid: prevState.value.includes("@"),
+    };
+  }
+  return {
+    value: "",
+    isValid: false,
+  };
+};
+/* </-----Email----->*/
+
+/* <-----Password----> */
+const passwordReducer = (prevState, action) => {
+  if (action.type === "USER_INPUT") {
+    return {
+      value: action.value,
+      isValid: action.value.trim().length > 7,
+    };
+  }
+  if (action.type === "INPUT_BLUR") {
+    return {
+      value: prevState.value,
+      isValid: prevState.value.trim().length > 7,
+    };
+  }
+  return {
+    value: "",
+    isValid: false,
+  };
+};
+/* </-----Password----> */
+
+const Login = (props) => {
+  // const [inputEmail, setInputEmail] = useState("");
+  // const [emailIsValid, setEmailIsValid] = useState();
+  // const [inputPassword, setInputPassword] = useState("");
+  // const [passwordIsValid, setPasswordIsValid] = useState();
+
+  const [formIsValid, setFormIsValid] = useState(false);
+
+  /* <--Email Reducer-->*/
+  const [emailState, dispatchEmailState] = useReducer(emailReducer, {
+    value: "",
+    isValid: undefined,
+  });
+  /* </--Email Reducer-->*/
+  /* <--Password Reducer-->*/
+  const [passwordState, dispatchPasswordState] = useReducer(passwordReducer, {
+    value: "",
+    isValid: undefined,
+  });
+  /* </--Password Reducer-->*/
+
+  const { isValid: emailIsValid } = emailState;
+  const { isValid: passwordIsValid } = passwordState;
+
+  const ctx = useContext(AuthContext);
+
+  const emailInputRef = useRef();
+  const passwordInputRef = useRef();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log("Effect function");
+      setFormIsValid(emailIsValid && passwordIsValid);
+    }, 500);
+
+    return () => {
+      console.log("Tozalash");
+      clearTimeout(timer);
+      console.log("Tugadi");
+    };
+  }, [emailState, passwordIsValid]);
+
+  const emailChangeHandler = (event) => {
+    // setInputEmail(event.target.value);
+    dispatchEmailState({ type: "USER_INPUT", value: event.target.value });
+    // setFormIsValid(event.target.value.includes("@") && inputPassword.trim().length > 7);
+  };
+
+  const passwordChangeHandler = (event) => {
+    dispatchPasswordState({ type: "USER_INPUT", value: event.target.value });
+
+    // setFormIsValid(event.target.value.trim().length > 7 && emailState.isValid);
+  };
+
+  const validateEmailHandler = () => {
+    // setEmailIsValid(inputEmail.includes("@"));
+    dispatchEmailState({ type: "INPUT_BLUR" });
+  };
+
+  const validatePasswordHandler = () => {
+    dispatchPasswordState({ type: "INPUT_BLUR" });
+  };
+
+  const submitHandler = (event) => {
+    event.preventDefault();
+    if (formIsValid) {
+      ctx.onLogin(emailState.value, passwordState.value);
+    } else if (!emailIsValid) {
+      emailInputRef.current.focus();
+    } else {
+      passwordInputRef.current.focus();
+    }
+  };
+
+  return (
+    <Card className={styles.login}>
+      <form onSubmit={submitHandler}>
+        <Input
+          ref={emailInputRef}
+          id="email"
+          label="Email"
+          type="email"
+          isValid={emailIsValid}
+          value={emailState.value}
+          onChange={emailChangeHandler}
+          onBlur={validateEmailHandler}
+          placeholder="Email"
+        />
+
+        <Input
+          ref={passwordInputRef}
+          id="password"
+          label="Password"
+          type="password"
+          isValid={passwordIsValid}
+          value={passwordState.value}
+          onChange={passwordChangeHandler}
+          onBlur={validatePasswordHandler}
+          placeholder="Password"
+        />
+
+        <div className={styles.actions}>
+          <Button type="submit" className={styles.btn}>
+            Вход
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+};
+
+export default Login;
